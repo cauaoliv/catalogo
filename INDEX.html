@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catálogo Mobile Pro</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #000000; /* Preto luxo */
+            --bg-color: #f4f4f4;
+            --card-radius: 12px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            padding-bottom: 80px; /* Espaço para botão admin não cobrir conteúdo */
+        }
+
+        /* --- NAVBAR & BUSCA --- */
+        .navbar {
+            background: #fff;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            padding: 10px 15px;
+        }
+        
+        .search-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .search-input {
+            background-color: #f0f2f5;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 15px 10px 40px;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        /* --- CATEGORIAS (SCROLL HORIZONTAL MOBILE) --- */
+        .mobile-cats-wrapper {
+            position: sticky;
+            top: 60px; /* Ajuste conforme altura da navbar */
+            z-index: 900;
+            background: var(--bg-color);
+            padding: 10px 0;
+            margin: 0 -12px; /* Sangria negativa para encostar nas bordas */
+        }
+
+        .category-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 0 15px;
+            -webkit-overflow-scrolling: touch; /* Rolagem suave no iPhone */
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .category-scroll::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
+
+        .cat-pill {
+            white-space: nowrap;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+            transition: 0.2s;
+        }
+        
+        .cat-pill.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- GRID DE PRODUTOS --- */
+        .product-card {
+            background: #fff;
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .product-card:active {
+            transform: scale(0.98); /* Efeito de clique no celular */
+        }
+
+        .img-box {
+            position: relative;
+            padding-top: 100%; /* Mantém a imagem quadrada (1:1) */
+            background: #eee;
+            overflow: hidden;
+        }
+        
+        .img-box img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .info-box {
+            padding: 10px;
+        }
+        
+        .prod-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Limita a 2 linhas */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .prod-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .prod-id {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        /* --- FAB (BOTÃO ADMIN) --- */
+        .fab-admin {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            border: none;
+        }
+
+        /* --- MODAL --- */
+        .modal-content { border-radius: 15px; }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            font-weight: bold;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar sticky-top">
+        <div class="container-fluid d-flex flex-column gap-2">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <span class="navbar-brand mb-0 h1 fw-bold"><i class="bi bi-grid-fill"></i> LOJA PRO</span>
+                <span class="badge bg-light text-dark border" id="counterBadge">0 itens</span>
+            </div>
+            
+            <div class="search-container">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar modelo, código...">
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-3">
+        <div class="mobile-cats-wrapper">
+            <div class="category-scroll" id="catContainer">
+                </div>
+        </div>
+
+        <div class="row g-2 mt-1" id="gridContainer">
+            </div>
+    </div>
+
+    <button class="fab-admin" onclick="toggleAdmin()">
+        <i class="bi bi-gear-fill"></i>
+    </button>
+
+    <div class="modal fade" id="adminModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-fullscreen-sm-down"> <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Painel Admin</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div id="loginArea" class="text-center p-4">
+                        <p>Digite a senha para editar:</p>
+                        <input type="password" id="passInput" class="form-control mb-3 text-center" placeholder="Senha (1234)">
+                        <button onclick="checkPass()" class="btn btn-dark w-100">Entrar</button>
+                    </div>
+
+                    <div id="editArea" style="display: none;">
+                        <h6 class="fw-bold mb-3">Adicionar / Editar Produto</h6>
+                        <div class="row g-2">
+                            <div class="col-4"><input id="inpId" type="number" class="form-control form-control-sm" placeholder="ID"></div>
+                            <div class="col-8"><input id="inpCat" type="text" class="form-control form-control-sm" placeholder="Categoria" list="catList"></div>
+                            <div class="col-12"><input id="inpTitle" type="text" class="form-control form-control-sm" placeholder="Nome do Produto"></div>
+                            <div class="col-12"><input id="inpImg" type="text" class="form-control form-control-sm" placeholder="Link Imagem URL"></div>
+                            <div class="col-6"><input id="inpPrice" type="text" class="form-control form-control-sm" placeholder="Preço"></div>
+                            <div class="col-12"><textarea id="inpDesc" class="form-control form-control-sm" rows="2" placeholder="Descrição"></textarea></div>
+                            <div class="col-12 d-flex gap-2 mt-2">
+                                <button onclick="saveItem()" class="btn btn-primary w-100">Salvar</button>
+                                <button onclick="clearForm()" class="btn btn-outline-secondary"><i class="bi bi-eraser"></i></button>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div style="max-height: 200px; overflow-y: auto;" class="bg-white border rounded p-2">
+                            <table class="table table-sm" style="font-size: 0.8rem;">
+                                <tbody id="adminTable"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-warning mt-3 py-2" style="font-size: 0.8rem;">
+                            <strong>Salvar Alterações:</strong> Copie o código abaixo e substitua no arquivo HTML.
+                            <textarea id="codeExport" class="form-control mt-1" rows="3" style="font-size: 0.7rem;" readonly></textarea>
+                            <button onclick="copyCode()" class="btn btn-dark btn-sm w-100 mt-2">Copiar Código</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="prodModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body p-0">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 z-3 bg-white" data-bs-dismiss="modal"></button>
+                    <img id="mImg" src="" class="w-100" style="height: 350px; object-fit: cover; border-radius: 15px 15px 0 0;">
+                    <div class="p-3">
+                        <small class="text-muted" id="mId"></small>
+                        <h4 class="fw-bold mb-1" id="mTitle"></h4>
+                        <h3 class="text-primary fw-bold mb-3" id="mPrice"></h3>
+                        <p class="text-muted small" id="mDesc"></p>
+                        <a id="wppBtn" href="#" target="_blank" class="btn btn-whatsapp mt-2">
+                            <i class="bi bi-whatsapp"></i> Quero Comprar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="catList"></datalist>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- SEUS DADOS (COLE O CÓDIGO NOVO AQUI) ---
+        let products = [
+            { id: 101, title: "Nike Air Jordan 1", category: "Tenis", price: "R$ 699,00", img: "https://images.unsplash.com/photo-1552346154-21d32810aba3?w=500", desc: "Couro legítimo premium." },
+            { id: 102, title: "Camiseta Oversized", category: "Roupas", price: "R$ 119,00", img: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500", desc: "Algodão macio." },
+            { id: 103, title: "Boné NY Yankees", category: "Acessorios", price: "R$ 89,00", img: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500", desc: "Aba curva original." },
+            { id: 104, title: "Relógio Digital", category: "Acessorios", price: "R$ 250,00", img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", desc: "À prova d'água." }
+        ];
+
+        // --- SISTEMA ---
+        const grid = document.getElementById('gridContainer');
+        const catContainer = document.getElementById('catContainer');
+        const searchInput = document.getElementById('searchInput');
+        let currentCat = 'todos';
+
+        function init() {
+            renderCats();
+            renderGrid(products);
+            updateAdmin();
+            genCode();
+        }
+
+        // Renderizar Categorias (Botões Pílula)
+        function renderCats() {
+            const cats = ['todos', ...new Set(products.map(p => p.category))];
+            catContainer.innerHTML = '';
+            
+            // Datalist para o admin
+            document.getElementById('catList').innerHTML = '';
+            
+            cats.forEach(c => {
+                // Botão no Menu
+                const btn = document.createElement('button');
+                btn.className = `cat-pill ${c === currentCat ? 'active' : ''}`;
+                btn.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+                btn.onclick = () => filter(c);
+                catContainer.appendChild(btn);
+
+                // Opção no Admin
+                if(c !== 'todos') {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    document.getElementById('catList').appendChild(opt);
+                }
+            });
+        }
+
+        // Renderizar Produtos
+        function renderGrid(list) {
+            grid.innerHTML = '';
+            document.getElementById('counterBadge').textContent = `${list.length} itens`;
+
+            if(list.length === 0) {
+                grid.innerHTML = '<div class="text-center mt-5 text-muted">Nada encontrado.</div>';
+                return;
+            }
+
+            list.forEach(p => {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-md-4 col-lg-3'; // 2 por linha no celular
+                col.innerHTML = `
+                    <div class="product-card" onclick="showModal(${p.id})">
+                        <div class="img-box">
+                            <img src="${p.img}" loading="lazy">
+                        </div>
+                        <div class="info-box">
+                            <div class="prod-id">#${p.id}</div>
+                            <div class="prod-title">${p.title}</div>
+                            <div class="prod-price">${p.price}</div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(col);
+            });
+        }
+
+        // Filtro
+        function filter(cat) {
+            currentCat = cat;
+            // Atualiza visual dos botões
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.classList.remove('active');
+                if(b.textContent.toLowerCase() === cat) b.classList.add('active');
+            });
+
+            if(cat === 'todos') renderGrid(products);
+            else renderGrid(products.filter(p => p.category === cat));
+        }
+
+        // Busca
+        searchInput.addEventListener('input', (e) => {
+            const t = e.target.value.toLowerCase();
+            const res = products.filter(p => p.title.toLowerCase().includes(t) || p.id.toString().includes(t));
+            renderGrid(res);
+        });
+
+        // Modal Cliente
+        function showModal(id) {
+            const p = products.find(x => x.id === id);
+            document.getElementById('mImg').src = p.img;
+            document.getElementById('mTitle').textContent = p.title;
+            document.getElementById('mPrice').textContent = p.price;
+            document.getElementById('mDesc').textContent = p.desc;
+            document.getElementById('mId').textContent = `Ref: ${p.id}`;
+            
+            // Link WhatsApp
+            const phone = "5511999999999"; // SEU NÚMERO
+            const msg = `Olá, tenho interesse no item: ${p.title} (Ref: ${p.id})`;
+            document.getElementById('wppBtn').href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+            
+            new bootstrap.Modal(document.getElementById('prodModal')).show();
+        }
+
+        // --- ADMIN ---
+        const adminModal = new bootstrap.Modal(document.getElementById('adminModal'));
+        
+        function toggleAdmin() { adminModal.show(); }
+        
+        function checkPass() {
+            if(document.getElementById('passInput').value === '1234') {
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('editArea').style.display = 'block';
+            } else alert('Senha errada');
+        }
+
+        function saveItem() {
+            const id = parseInt(document.getElementById('inpId').value);
+            if(!id) return alert('ID obrigatório');
+            
+            const obj = {
+                id: id,
+                title: document.getElementById('inpTitle').value || 'Sem Nome',
+                category: document.getElementById('inpCat').value || 'Geral',
+                price: document.getElementById('inpPrice').value || 'R$ 0,00',
+                img: document.getElementById('inpImg').value || '',
+                desc: document.getElementById('inpDesc').value || ''
+            };
+
+            const idx = products.findIndex(p => p.id === id);
+            if(idx >= 0) products[idx] = obj;
+            else products.push(obj);
+
+            init();
+            clearForm();
+            alert('Salvo! Copie o código novo.');
+        }
+
+        function delItem(id) {
+            if(confirm('Apagar?')) {
+                products = products.filter(p => p.id !== id);
+                init();
+            }
+        }
+
+        function editItem(id) {
+            const p = products.find(x => x.id === id);
+            document.getElementById('inpId').value = p.id;
+            document.getElementById('inpTitle').value = p.title;
+            document.getElementById('inpCat').value = p.category;
+            document.getElementById('inpPrice').value = p.price;
+            document.getElementById('inpImg').value = p.img;
+            document.getElementById('inpDesc').value = p.desc;
+        }
+
+        function clearForm() {
+            document.querySelectorAll('#editArea input, #editArea textarea').forEach(i => i.value = '');
+        }
+
+        function updateAdmin() {
+            const tb = document.getElementById('adminTable');
+            tb.innerHTML = '';
+            products.forEach(p => {
+                tb.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td class="text-truncate" style="max-width: 100px;">${p.title}</td>
+                        <td class="text-end">
+                            <i class="bi bi-pencil text-primary me-2" onclick="editItem(${p.id})"></i>
+                            <i class="bi bi-trash text-danger" onclick="delItem(${p.id})"></i>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function genCode() {
+            document.getElementById('codeExport').value = `let products = ${JSON.stringify(products)};`;
+        }
+
+        function copyCode() {
+            document.getElementById('codeExport').select();
+            document.execCommand('copy');
+            alert('Copiado!');
+        }
+
+        init();
+    </script>
+</body>
+</html>
